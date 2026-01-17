@@ -2,11 +2,12 @@ import os
 import sys
 import numpy as np
 import pandas as pd
-import os
-import sys
-import numpy as np
-import pandas as pd
-import tflite_runtime.interpreter as tflite
+try:
+    import tflite_runtime.interpreter as tflite
+except ImportError:
+    import tensorflow as tf
+    tflite = tf.lite
+
 from PIL import Image
 
 # ==================================================
@@ -21,7 +22,7 @@ WATER_CSV = os.path.join(BASE_DIR, "water.csv")
 IMG_SIZE = (224, 224)
 
 # ==================================================
-# CLASS LABELS
+# CLASS LABELS (ORDER MUST MATCH TRAINING)
 # ==================================================
 CLASS_NAMES = [
     'achar','aloo gobi','aloo matar','aloo methi','aloo puri','aloo tikki',
@@ -65,15 +66,13 @@ def get_interpreter():
     return _interpreter, _input_details, _output_details
 
 # ==================================================
-# IMAGE PREPROCESSING
+# IMAGE PREPROCESSING (RAW INPUT – VERY IMPORTANT)
 # ==================================================
 def preprocess_pil_image(pil_image):
     img = pil_image.resize(IMG_SIZE)
     x = np.array(img, dtype=np.float32)
-    x = x / 127.5 - 1.0   # MobileNetV3 normalization
     x = np.expand_dims(x, axis=0)
     return x
-
 
 # ==================================================
 # DISH PREDICTION
@@ -83,24 +82,12 @@ def predict_dish(pil_image):
 
     x = preprocess_pil_image(pil_image)
 
-    input_index = input_details[0]["index"]
-    input_dtype = input_details[0]["dtype"]
-    scale, zero_point = input_details[0]["quantization"]
-
-    if input_dtype == np.uint8:
-        x = x / scale + zero_point
-        x = np.clip(x, 0, 255).astype(np.uint8)
-
-    interpreter.set_tensor(input_index, x)
+    interpreter.set_tensor(input_details[0]["index"], x)
     interpreter.invoke()
 
     y = interpreter.get_tensor(output_details[0]["index"])[0]
-    out_scale, out_zero = output_details[0]["quantization"]
-
-    if out_scale > 0:
-        y = (y.astype(np.float32) - out_zero) * out_scale
-
     pred_idx = int(np.argmax(y))
+
     return CLASS_NAMES[pred_idx], float(y[pred_idx])
 
 # ==================================================
@@ -109,9 +96,11 @@ def predict_dish(pil_image):
 def get_ingredients(dish):
     df = pd.read_csv(DISHES_CSV)
     df.columns = df.columns.str.strip()
+
     row = df[df['Dish (cleaned)'].str.lower() == dish.lower()]
     if row.empty:
         return []
+
     return [i.strip() for i in row['Matched_ingredients'].values[0].split(',')]
 
 # ==================================================
@@ -123,6 +112,7 @@ def calculate_water_footprint(ingredients):
     df['Item_lower'] = df['Item'].str.lower()
 
     g = b = gr = 0.0
+
     for ing in ingredients:
         r = df[df['Item_lower'] == ing.lower()]
         if not r.empty:
@@ -131,6 +121,7 @@ def calculate_water_footprint(ingredients):
             gr += float(r['Grey (L/kg)'].values[0])
 
     total = g + b + gr
+
     return {
         "green": round(g, 2),
         "blue": round(b, 2),
@@ -142,7 +133,7 @@ def calculate_water_footprint(ingredients):
     }
 
 # ==================================================
-# SUSTAINABILITY MESSAGE (OPTIONAL BUT RECOMMENDED)
+# SUSTAINABILITY MESSAGE
 # ==================================================
 def water_message(g, b, gr):
     msg = []
