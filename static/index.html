@@ -257,9 +257,32 @@
             })
                 .then(r => r.json())
                 .then(d => {
-                    output.style.color = "#a7f3d0"; // Success color
-                    output.textContent = JSON.stringify(d, null, 2);
-                })
+    output.style.color = "#a7f3d0";
+
+    const wf = d.water_footprint;
+
+    let text = "";
+    text += `Dish: ${d.dish}\n`;
+    text += `Confidence: ${d.confidence}%\n\n`;
+
+    text += `Water Footprint (Liters/kg):\n`;
+    text += `  Green: ${wf.green} (${wf.green_pct}%)\n`;
+    text += `  Blue:  ${wf.blue} (${wf.blue_pct}%)\n`;
+    text += `  Grey:  ${wf.grey} (${wf.grey_pct}%)\n`;
+    text += `  Total: ${wf.total}\n\n`;
+
+    if (d.sustainability_advice.length > 0) {
+        text += `Sustainability Advice:\n`;
+        d.sustainability_advice.forEach((msg, i) => {
+            text += `  ${i + 1}. ${msg}\n`;
+        });
+    } else {
+        text += `Sustainability Advice:\n  No major concerns detected.\n`;
+    }
+
+    output.textContent = text;
+})
+
                 .catch(err => {
                     output.style.color = "#fca5a5"; // Error color
                     output.textContent = "Error: " + err;
