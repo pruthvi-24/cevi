@@ -23,7 +23,7 @@
             const fd = new FormData();
             fd.append("file", file);
 
-            fetch("https://cevi-api.onrender.com/analyze", {
+            fetch("/analyze", {   // ✅ SAME SERVER
                 method: "POST",
                 body: fd
             })
