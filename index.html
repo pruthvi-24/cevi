@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Food Water Footprint Analyzer</title>
+</head>
+<body>
+
+    <h2>Food Water Footprint Analyzer</h2>
+
+    <input type="file" id="fileInput">
+    <button onclick="sendFile()">Analyze</button>
+
+    <pre id="output"></pre>
+
+    <script>
+        function sendFile() {
+            const file = document.getElementById("fileInput").files[0];
+            if (!file) {
+                alert("Select an image");
+                return;
+            }
+
+            const fd = new FormData();
+            fd.append("file", file);
+
+            fetch("https://cevi-api.onrender.com/analyze", {
+                method: "POST",
+                body: fd
+            })
+            .then(r => r.json())
+            .then(d => {
+                document.getElementById("output").textContent =
+                    JSON.stringify(d, null, 2);
+            })
+            .catch(err => {
+                document.getElementById("output").textContent = err;
+            });
+        }
+    </script>
+
+</body>
+</html>
