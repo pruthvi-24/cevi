@@ -260,28 +260,45 @@
     output.style.color = "#a7f3d0";
 
     const wf = d.water_footprint;
+    const ingredients = d.ingredients;
 
     let text = "";
+
+    // Dish & confidence
     text += `Dish: ${d.dish}\n`;
     text += `Confidence: ${d.confidence}%\n\n`;
 
-    text += `Water Footprint (Liters/kg):\n`;
-    text += `  Green: ${wf.green} (${wf.green_pct}%)\n`;
-    text += `  Blue:  ${wf.blue} (${wf.blue_pct}%)\n`;
-    text += `  Grey:  ${wf.grey} (${wf.grey_pct}%)\n`;
-    text += `  Total: ${wf.total}\n\n`;
+    // Ingredients
+    text += `Ingredients Used:\n`;
+    if (ingredients.length > 0) {
+        ingredients.forEach((ing, i) => {
+            text += `  ${i + 1}. ${ing}\n`;
+        });
+    } else {
+        text += `  No ingredient data available.\n`;
+    }
+    text += `\n`;
 
+    // Water footprint
+    text += `Water Footprint (Liters/kg):\n`;
+    text += `  Green Water: ${wf.green} L (${wf.green_pct}%)\n`;
+    text += `  Blue Water:  ${wf.blue} L (${wf.blue_pct}%)\n`;
+    text += `  Grey Water:  ${wf.grey} L (${wf.grey_pct}%)\n`;
+    text += `  Total Water: ${wf.total} L\n\n`;
+
+    // Sustainability advice
+    text += `Sustainability Advice:\n`;
     if (d.sustainability_advice.length > 0) {
-        text += `Sustainability Advice:\n`;
         d.sustainability_advice.forEach((msg, i) => {
             text += `  ${i + 1}. ${msg}\n`;
         });
     } else {
-        text += `Sustainability Advice:\n  No major concerns detected.\n`;
+        text += `  No major sustainability concerns detected.\n`;
     }
 
     output.textContent = text;
 })
+
 
                 .catch(err => {
                     output.style.color = "#fca5a5"; // Error color
